@@ -52,6 +52,9 @@ func New() *ArgOpts {
 // It sets the values directly on the struct, as well as returns a pointer to the struct as
 // well as an error
 func (opts *ArgOpts) Parse() (*ArgOpts, error) {
+	var nc []*big.Int
+	var lastVal *string
+
 	// try to parse the arguments
 	_, err := flags.Parse(opts)
 
@@ -101,9 +104,6 @@ func (opts *ArgOpts) Parse() (*ArgOpts, error) {
 
 	// assign the DC count to opts.DcCount
 	opts.DcCount = count
-
-	var nc []*big.Int
-	var lastVal *string
 
 	// this iterates over the nodeCounts and converts each item to
 	// a *big.Int while appending it to the 'nc' slice
