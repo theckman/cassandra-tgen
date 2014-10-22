@@ -27,6 +27,8 @@ import (
 
 func interactiveInput() (counts []*big.Int) {
 	var line string
+	var numDcs, dcCount *big.Int
+	var ok bool
 
 	counts = make([]*big.Int, 0)
 
@@ -37,41 +39,43 @@ func interactiveInput() (counts []*big.Int) {
 	fmt.Println("--------------------------------")
 	fmt.Println("")
 
-	// retry label for when the number of datacenters cannot be converted to a big.Int
-CountRetry:
-	fmt.Print(" How many datacenters will participate in this Cassandra cluster? ")
-
-	// get the user input
-	fmt.Scanln(&line)
-
-	// try to convert the user input to a big.Int
-	numDcs, ok := new(big.Int).SetString(line, 10)
-
-	// if the user's input cannot be converted inform them over the error and try again
-	if !ok {
-		fmt.Println(fmt.Sprintf("Oops, '%v' can't be converted to a big.Int\n", line))
-		goto CountRetry
-	}
-
-	// build the array of node counts per datacenter in a loop
-	for i := big.NewInt(0); i.Cmp(numDcs) == -1; i.Add(i, increment) {
-		// retry label for when the number of nodes in this datacenter cannot be converted to a big.Int
-	InputRetry:
-		dcNum := new(big.Int).Set(i)
-		dcNum.Add(dcNum, increment)
-
-		fmt.Print(fmt.Sprintf(" How many nodes are in datacenter #%d? ", dcNum))
+	for {
+		fmt.Print(" How many datacenters will participate in this Cassandra cluster? ")
 
 		// get the user input
 		fmt.Scanln(&line)
 
 		// try to convert the user input to a big.Int
-		dcCount, ok := new(big.Int).SetString(line, 10)
+		numDcs, ok = new(big.Int).SetString(line, 10)
 
-		// if the input couldnt be converted print an error and try again
+		// if the user's input cannot be converted inform them over the error and try again
 		if !ok {
-			fmt.Println(fmt.Sprintf("Oops, '%v' can't be converted to to a big.Int\n", line))
-			goto InputRetry
+			fmt.Println(fmt.Sprintf("Oops, '%v' can't be converted to a big.Int\n", line))
+		} else {
+			break
+		}
+	}
+
+	// build the array of node counts per datacenter in a loop
+	for i := big.NewInt(0); i.Cmp(numDcs) == -1; i.Add(i, increment) {
+		dcNum := new(big.Int).Set(i)
+		dcNum.Add(dcNum, increment)
+
+		for {
+			fmt.Print(fmt.Sprintf(" How many nodes are in datacenter #%d? ", dcNum))
+
+			// get the user input
+			fmt.Scanln(&line)
+
+			// try to convert the user input to a big.Int
+			dcCount, ok = new(big.Int).SetString(line, 10)
+
+			// if the input couldnt be converted print an error and try again
+			if !ok {
+				fmt.Println(fmt.Sprintf("Oops, '%v' can't be converted to to a big.Int\n", line))
+			} else {
+				break
+			}
 		}
 
 		// append the value to the count array
