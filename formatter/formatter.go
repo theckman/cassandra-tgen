@@ -25,27 +25,33 @@ import (
 func PrintTokens(t [][]*big.Int, w int) {
 	for i, tokenList := range t {
 		// print the header
-		fmt.Println(fmt.Sprintf("DC #%d:", i+1))
+		fmt.Printf("DC #%d:\n", i+1)
 
 		// get the width of the largest number to properly space the column
 		nnWidth := len(strconv.Itoa(len(tokenList)))
 
 		// print each node in the datacenter
 		for ni, nt := range tokenList {
-			fmt.Println(fmt.Sprintf("  Node #%*d: % *d", nnWidth, ni+1, w+1, nt))
+			fmt.Printf("  Node #%*d: % *d\n", nnWidth, ni+1, w+1, nt)
 		}
+	}
+}
+
+func jsonMarshal(v map[string]interface{}, pp bool) ([]byte, err) {
+	if pp {
+		return json.MarshalIndent(v, "", "  ")
+	} else {
+		return json.Marshal(v)
 	}
 }
 
 // PrintJSON prints the results of the token generation in a JSON format
 func PrintJSON(t [][]*big.Int, prettyPrint bool) {
-	var dcList []*string
-	var jsonBytes []byte
-	var err error
-
 	data := make(map[string]interface{})
 
 	data["keys"] = make([]*string, 0)
+
+	var dcList []*string
 
 	for x, v := range t {
 		// set the key name for this datacenter
@@ -60,14 +66,22 @@ func PrintJSON(t [][]*big.Int, prettyPrint bool) {
 
 	data["keys"] = dcList
 
-	if prettyPrint {
-		jsonBytes, err = json.MarshalIndent(data, "", "  ")
-	} else {
-		jsonBytes, err = json.Marshal(data)
-	}
+	jsonBytes, err := jsonMarshal(data, prettyPrint)
 
 	if err != nil {
-		fmt.Println("error printing json:", err)
+		m := make(map[string]string)
+		m["error"] = err.Error()
+
+		j, err2 := jsonMarshal(m, prettyPrint)
+
+		// if this is not nilwe've hit a very unexpected and very
+		// unavoidable error this really should never be hit unless
+		// something really bizarre happens...
+		if err2 != nil {
+			panic(fmt.Sprintf("unavoidable error; '%v' when JSON Marshaling error for data map. Original: '%v'\n", err2.Error(), err.Error()))
+		}
+
+		fmt.Println(string(j))
 		return
 	}
 
