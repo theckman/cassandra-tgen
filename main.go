@@ -25,18 +25,13 @@ import (
 )
 
 func interactiveInput() (counts []*big.Int) {
-	var line string
-	var numDcs, dcCount *big.Int
-	var ok bool
-
-	counts = make([]*big.Int, 0)
-
-	// incrementer for i++ operations
-	increment := big.NewInt(1)
-
 	fmt.Println("Token Generator Interactive Mode")
 	fmt.Println("--------------------------------")
-	fmt.Println("")
+	fmt.Print("\n")
+
+	var ok bool
+	var line string
+	var numDcs *big.Int
 
 	for {
 		fmt.Print(" How many datacenters will participate in this Cassandra cluster? ")
@@ -54,6 +49,13 @@ func interactiveInput() (counts []*big.Int) {
 			break
 		}
 	}
+
+	// incrementer for big.Int "i++" operations
+	increment := big.NewInt(1)
+
+	counts = make([]*big.Int, 0)
+
+	var dcCount *big.Int
 
 	// build the array of node counts per datacenter in a loop
 	for i := big.NewInt(0); i.Cmp(numDcs) == -1; i.Add(i, increment) {
@@ -81,15 +83,12 @@ func interactiveInput() (counts []*big.Int) {
 		counts = append(counts, dcCount)
 	}
 
-	fmt.Println("")
+	fmt.Print("\n")
 
 	return
 }
 
 func main() {
-	var tokenResults [][]*big.Int
-	var tokenRing *ring.TokenRing
-
 	// build a new option struct and parse it
 	opts := options.New()
 	err := opts.Parse()
@@ -100,14 +99,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	var tokenRing *ring.TokenRing
+
 	// if the count string is zero we should use the interactive input mode
 	// otherwise use the command-line options
 	if opts.DcCountStr == "0" {
-		nodeCounts := interactiveInput()
-		tokenRing = ring.NewRing(nodeCounts, opts.RingRange)
+		tokenRing = ring.NewRing(interactiveInput(), opts.RingRange)
 	} else {
 		tokenRing = ring.NewRing(opts.NodeCounts, opts.RingRange)
 	}
+
+	var tokenResults [][]*big.Int
 
 	// call the proper function based on NTS or ONTS option
 	if opts.Nts {
@@ -116,16 +118,11 @@ func main() {
 		tokenResults = tokenRing.CalcOffsetTokensONTS()
 	}
 
-	// if we are printing in JSON format determine which method we're using
+	// if we are printing in JSON format print JSON, while passing Pretty flag
 	// if not JSON just print the table format
 	if opts.JSON {
-		if opts.Pretty {
-			formatter.PrintJSON(tokenResults, true)
-		} else {
-			formatter.PrintJSON(tokenResults, false)
-		}
+		formatter.PrintJSON(tokenResults, opts.Pretty)
 	} else {
-		longestTokenLen := len(opts.RingRangeStr)
-		formatter.PrintTokens(tokenResults, longestTokenLen)
+		formatter.PrintTokens(tokenResults, len(opts.RingRangeStr))
 	}
 }
