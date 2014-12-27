@@ -15,9 +15,9 @@
 package options
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
+	"os"
 	"strings"
 
 	"github.com/jessevdk/go-flags"
@@ -26,7 +26,7 @@ import (
 // ArgOpts is a struct for specifying command line options for this utility
 type ArgOpts struct {
 	// The -j or --json flag specifies whether or not to use the JSON output format
-	JSON bool `short:"j" long:"json" description:"use the JSON output format" default:"false"`
+	JSON bool `short:"j" long:"json" default:"false" description:"use the JSON output format"`
 
 	// The -J or --pretty-json option specifies whether or not to use the formatter JSON output
 	Pretty bool `short:"J" long:"pretty-json" default:"false" description:"print the output in a prettier JSON format assumes '-j'"`
@@ -48,13 +48,14 @@ type ArgOpts struct {
 	// ./cassandra-tgen -d 3 -c 3,2,1
 	NodeCountStr string `short:"c" long:"node-count" default:"1" description:"Comma-delimited list of datacenter node counts: --count '3,2,1'"`
 
-	// These two options are not use by go-flags -- some of the values parsed from string => big.Int are stored here
+	// These two options are not use by go-flags, they are some of the
+	// values parsed from string => big.Int that are needed later
 	DcCount, RingRange *big.Int
 	NodeCounts         []*big.Int
 }
 
-func badConversion(o *ArgOpts, v interface{}) (*ArgOpts, error) {
-	return o, fmt.Errorf("failed to convert '%v' to big.Int", v)
+func badConversion(v interface{}) error {
+	return fmt.Errorf("failed to convert '%v' to big.Int", v)
 }
 
 // New returns a pointer to a new ArgOpts struct
@@ -65,21 +66,26 @@ func New() *ArgOpts {
 // Parse parses the command line arguments for the option struct.
 // It sets the values directly on the struct, as well as returns a pointer to the struct as
 // well as an error
-func (opts *ArgOpts) Parse() (*ArgOpts, error) {
+func (opts *ArgOpts) Parse() error {
 	var nc []*big.Int
-	var lastVal *string
 
-	// try to parse the arguments
-	_, err := flags.Parse(opts)
+	parser := flags.NewParser(opts, flags.HelpFlag|flags.PassDoubleDash)
 
-	// if there was an error parsing the args returns a new ArgOpts
-	// as well as the error
+	_, err := parser.Parse()
+
+	// if parsing bombed and it's not the help message
+	// we need to print the error and bail out with exit code 1
 	if err != nil {
-		opts = &ArgOpts{}
-		return opts, err
+		if !strings.Contains(err.Error(), "Usage") {
+			fmt.Fprintf(os.Stderr, "error: %v\n", err.Error())
+			os.Exit(1)
+		} else {
+			fmt.Printf("%v\n", err.Error())
+			os.Exit(0)
+		}
 	}
 
-	// if --onts unset -nts which is enabled by default
+	// if Onts unset Nts which is enabled by default
 	if opts.Onts {
 		opts.Nts = false
 	}
@@ -98,13 +104,13 @@ func (opts *ArgOpts) Parse() (*ArgOpts, error) {
 
 	// if converting opts.DcCountStr => *big.Int failed return the failure
 	if !ok {
-		return badConversion(opts, opts.DcCountStr)
+		return badConversion(opts.DcCountStr)
 	}
 
 	ringRange, ok := new(big.Int).SetString(opts.RingRangeStr, 10)
 
 	if !ok {
-		return badConversion(opts, opts.RingRangeStr)
+		return badConversion(opts.RingRangeStr)
 	}
 
 	opts.RingRange = ringRange
@@ -112,8 +118,7 @@ func (opts *ArgOpts) Parse() (*ArgOpts, error) {
 	// if the specific DC count doesn't match up with the node counts provided
 	// return an error because things are whacked
 	if count.Cmp(big.NewInt(int64(len(nodeCounts)))) != 0 && opts.DcCountStr != "0" {
-		err := "the datacenter count (-d) must be equivalent to count of items in the node count (-c) array"
-		return opts, errors.New(err)
+		return fmt.Errorf("the datacenter count (-d) must be equivalent to count of items in the node count (-c) array")
 	}
 
 	// assign the DC count to opts.DcCount
@@ -122,24 +127,18 @@ func (opts *ArgOpts) Parse() (*ArgOpts, error) {
 	// this iterates over the nodeCounts and converts each item to
 	// a *big.Int while appending it to the 'nc' slice
 	for _, v := range nodeCounts {
-		lastVal = &v
-		bi, ok := new(big.Int).SetString(*lastVal, 10)
-		if !ok {
-			break
-		}
-		nc = append(nc, bi)
-	}
+		bi, ok := new(big.Int).SetString(v, 10)
 
-	// if the length of the two slices fails to match up we aborted the above loop
-	// because we were unable to convert some value
-	if len(nc) != len(nodeCounts) {
-		return badConversion(opts, *lastVal)
-		// return opts, fmt.Errorf("failed to convert '%v' to a big.Int", *lastVal)
+		if !ok {
+			return badConversion(v)
+		}
+
+		nc = append(nc, bi)
 	}
 
 	// assign the []*big.Int to opts.NodeCounts
 	opts.NodeCounts = nc
 
 	// return the options and an error of nil
-	return opts, nil
+	return nil
 }

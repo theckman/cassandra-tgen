@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"math/big"
 	"os"
-	"strings"
 
 	"github.com/theckman/cassandra-tgen/formatter"
 	"github.com/theckman/cassandra-tgen/options"
@@ -93,21 +92,15 @@ func main() {
 
 	// build a new option struct and parse it
 	opts := options.New()
-	_, err := opts.Parse()
+	err := opts.Parse()
 
 	// if parsing bombed...
 	if err != nil {
-		// and it's not the help message...
-		if !strings.Contains(fmt.Sprintf("%v", err), "Usage") {
-			// print the error and exit indicating failure
-			fmt.Println("error:", err)
-			os.Exit(1)
-		}
-		// just return as it was the help message
-		return
+		fmt.Fprintf(os.Stderr, "%v\n", err.Error())
+		os.Exit(1)
 	}
 
-	// if the count string is the default value we should use the interactive input mode
+	// if the count string is zero we should use the interactive input mode
 	// otherwise use the command-line options
 	if opts.DcCountStr == "0" {
 		nodeCounts := interactiveInput()
