@@ -104,9 +104,9 @@ func main() {
 	// if the count string is zero we should use the interactive input mode
 	// otherwise use the command-line options
 	if opts.DcCountStr == "0" {
-		tokenRing = ring.NewRing(interactiveInput(), opts.RingRange)
+		tokenRing = ring.New(interactiveInput(), opts.RingRange)
 	} else {
-		tokenRing = ring.NewRing(opts.NodeCounts, opts.RingRange)
+		tokenRing = ring.New(opts.NodeCounts, opts.RingRange)
 	}
 
 	var tokenResults [][]*big.Int

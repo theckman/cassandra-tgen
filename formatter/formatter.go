@@ -37,7 +37,7 @@ func PrintTokens(t [][]*big.Int, w int) {
 	}
 }
 
-func jsonMarshal(v map[string]interface{}, pp bool) ([]byte, err) {
+func jsonMarshal(v map[string]interface{}, pp bool) ([]byte, error) {
 	if pp {
 		return json.MarshalIndent(v, "", "  ")
 	} else {
@@ -69,7 +69,7 @@ func PrintJSON(t [][]*big.Int, prettyPrint bool) {
 	jsonBytes, err := jsonMarshal(data, prettyPrint)
 
 	if err != nil {
-		m := make(map[string]string)
+		m := make(map[string]interface{})
 		m["error"] = err.Error()
 
 		j, err2 := jsonMarshal(m, prettyPrint)

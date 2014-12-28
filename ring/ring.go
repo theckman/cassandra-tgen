@@ -19,11 +19,13 @@ import (
 	"sort"
 )
 
-// MinDcOffsetDivider is minimum token offset divider
-const MinDcOffsetDivider int64 = 235
+const (
+	// MinDcOffsetDivider is minimum token offset divider
+	MinDcOffsetDivider int64 = 235
 
-// OffsetSpacer is the default divider for the token offset
-const OffsetSpacer int64 = 2
+	// OffsetSpacer is the default divider for the token offset
+	OffsetSpacer int64 = 2
+)
 
 // *big.Int -- used for i++ operations on big.Int objects
 var biIncrementer = big.NewInt(1)
@@ -57,7 +59,7 @@ type TokenRing struct {
 }
 
 // NewRing returns a new instance of TokenRing
-func NewRing(d []*big.Int, r *big.Int) (t *TokenRing) {
+func New(d []*big.Int, r *big.Int) (t *TokenRing) {
 	t = &TokenRing{
 		DcCounts:  d,
 		RingRange: r,
@@ -104,19 +106,18 @@ func (r *TokenRing) BestPerDcOffset() (iOffset *big.Int) {
 
 // CalcOffsetTokensNTS is something that somethings
 func (r *TokenRing) CalcOffsetTokensNTS() (dcList [][]*big.Int) {
-	var dcOffset, wOffset, wArcSize, wToken *big.Int
-	var wDcTokens []*big.Int
+	var (
+		dcOffset = r.BestPerDcOffset()
+		wOffset  = big.NewInt(0)
+		wArcSize = big.NewInt(0)
+	)
 
-	// variable initializers
 	dcList = make([][]*big.Int, 0)
-	dcOffset = r.BestPerDcOffset()
-	wOffset = big.NewInt(0)
-	wArcSize = big.NewInt(0)
 
 	// loop over the definition for each datacenter
 	for i, v := range r.DcCounts {
 		// instatiate a new temporary array of big.Int pointers
-		wDcTokens = make([]*big.Int, 0)
+		wDcTokens := make([]*big.Int, 0)
 
 		// the offset is r.BestPerDcOffset() * loop index
 		wOffset.Mul(big.NewInt(int64(i)), dcOffset)
@@ -127,7 +128,7 @@ func (r *TokenRing) CalcOffsetTokensNTS() (dcList [][]*big.Int) {
 		// we need to build the array of *big.Int that we need to append to dcList
 		for x := big.NewInt(0); x.Cmp(v) == -1; x.Add(x, biIncrementer) {
 			// instantiate a new *big.Int for wToken
-			wToken = big.NewInt(0)
+			wToken := big.NewInt(0)
 
 			// the generated token is (loop index * wArcSize + wOffset) % r.RingRange
 			wToken.Mul(x, wArcSize)
@@ -145,16 +146,15 @@ func (r *TokenRing) CalcOffsetTokensNTS() (dcList [][]*big.Int) {
 
 // CalcOffsetTokensONTS is something that somethings
 func (r *TokenRing) CalcOffsetTokensONTS() (dcList [][]*big.Int) {
-	var dcsByCount [][]*big.Int
-	var wCounts, nodeMap, layoutMap []*big.Int
-	var biggestDcCount *big.Int
-
-	dcsByCount = make([][]*big.Int, 0)
-	nodeMap = make([]*big.Int, 0)
-	layoutMap = make([]*big.Int, 0)
+	var (
+		dcsByCount = make([][]*big.Int, 0)
+		nodeMap    = make([]*big.Int, 0)
+		layoutMap  = make([]*big.Int, 0)
+	)
 
 	for i, v := range r.DcCounts {
-		wCounts = make([]*big.Int, 2)
+		wCounts := make([]*big.Int, 2)
+
 		wCounts[0] = big.NewInt(int64(i))
 		wCounts[1] = v
 
@@ -163,7 +163,7 @@ func (r *TokenRing) CalcOffsetTokensONTS() (dcList [][]*big.Int) {
 
 	sortBigInts(dcsByCount)
 
-	biggestDcCount = dcsByCount[0][1]
+	biggestDcCount := dcsByCount[0][1]
 
 	for _, v := range dcsByCount {
 		dcNum, nodeCount := v[0], v[1]
