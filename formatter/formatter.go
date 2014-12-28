@@ -15,6 +15,7 @@
 package formatter
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -22,19 +23,23 @@ import (
 )
 
 // PrintTokens prints the generated tokens in the same format as the Cassandra token generator
-func PrintTokens(t [][]*big.Int, w int) {
+func FormatTokens(t [][]*big.Int, w int) []byte {
+	var buf bytes.Buffer
+
 	for i, tokenList := range t {
 		// print the header
-		fmt.Printf("DC #%d:\n", i+1)
+		buf.WriteString(fmt.Sprintf("DC #%d:\n", i+1))
 
 		// get the width of the largest number to properly space the column
 		nnWidth := len(strconv.Itoa(len(tokenList)))
 
 		// print each node in the datacenter
 		for ni, nt := range tokenList {
-			fmt.Printf("  Node #%*d: % *d\n", nnWidth, ni+1, w+1, nt)
+			buf.WriteString(fmt.Sprintf("  Node #%*d: % *d\n", nnWidth, ni+1, w+1, nt))
 		}
 	}
+
+	return buf.Bytes()
 }
 
 func jsonMarshal(v map[string]interface{}, pp bool) ([]byte, error) {
@@ -46,7 +51,7 @@ func jsonMarshal(v map[string]interface{}, pp bool) ([]byte, error) {
 }
 
 // PrintJSON prints the results of the token generation in a JSON format
-func PrintJSON(t [][]*big.Int, prettyPrint bool) {
+func FormatJSON(t [][]*big.Int, prettyPrint bool) []byte {
 	data := make(map[string]interface{})
 
 	data["keys"] = make([]*string, 0)
@@ -81,9 +86,8 @@ func PrintJSON(t [][]*big.Int, prettyPrint bool) {
 			panic(fmt.Sprintf("unavoidable error; '%v' when JSON Marshaling error for data map. Original: '%v'\n", err2.Error(), err.Error()))
 		}
 
-		fmt.Println(string(j))
-		return
+		return j
 	}
 
-	fmt.Println(string(jsonBytes))
+	return jsonBytes
 }

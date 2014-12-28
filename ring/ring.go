@@ -59,25 +59,22 @@ type TokenRing struct {
 }
 
 // NewRing returns a new instance of TokenRing
-func New(d []*big.Int, r *big.Int) (t *TokenRing) {
-	t = &TokenRing{
+func New(d []*big.Int, r *big.Int) *TokenRing {
+	return &TokenRing{
 		DcCounts:  d,
 		RingRange: r,
 	}
-	return
 }
 
 // BestPerDcOffset is something that somethings
-func (r *TokenRing) BestPerDcOffset() (iOffset *big.Int) {
-	var iNumDcs, iDivider, iMdod *big.Int
-
-	iOffset = big.NewInt(0)
+func (r *TokenRing) BestPerDcOffset() *big.Int {
+	iOffset := big.NewInt(0)
 
 	iMostNodes := big.NewInt(1)
 	iLowestDivision := big.NewInt(0)
 
 	// set the total number of datacenters
-	iNumDcs = big.NewInt(int64(len(r.DcCounts)))
+	iNumDcs := big.NewInt(int64(len(r.DcCounts)))
 
 	// figure out the one with the most nodes
 	for _, v := range r.DcCounts {
@@ -91,7 +88,9 @@ func (r *TokenRing) BestPerDcOffset() (iOffset *big.Int) {
 	iLowestDivision.Mul(iNumDcs, iMostNodes)
 	iLowestDivision.Mul(iLowestDivision, big.NewInt(OffsetSpacer))
 
-	iMdod = big.NewInt(MinDcOffsetDivider)
+	iMdod := big.NewInt(MinDcOffsetDivider)
+
+	var iDivider *big.Int
 
 	if iLowestDivision.Cmp(iMdod) == 1 {
 		iDivider = iLowestDivision
@@ -101,18 +100,17 @@ func (r *TokenRing) BestPerDcOffset() (iOffset *big.Int) {
 
 	iOffset.Div(iOffset.Neg(r.RingRange), iDivider)
 
-	return
+	return iOffset
 }
 
 // CalcOffsetTokensNTS is something that somethings
-func (r *TokenRing) CalcOffsetTokensNTS() (dcList [][]*big.Int) {
+func (r *TokenRing) CalcOffsetTokensNTS() [][]*big.Int {
 	var (
 		dcOffset = r.BestPerDcOffset()
 		wOffset  = big.NewInt(0)
 		wArcSize = big.NewInt(0)
+		dcList   = make([][]*big.Int, 0)
 	)
-
-	dcList = make([][]*big.Int, 0)
 
 	// loop over the definition for each datacenter
 	for i, v := range r.DcCounts {
@@ -141,16 +139,13 @@ func (r *TokenRing) CalcOffsetTokensNTS() (dcList [][]*big.Int) {
 		// append wDcTokens to dcList
 		dcList = append(dcList, wDcTokens)
 	}
-	return
+
+	return dcList
 }
 
 // CalcOffsetTokensONTS is something that somethings
-func (r *TokenRing) CalcOffsetTokensONTS() (dcList [][]*big.Int) {
-	var (
-		dcsByCount = make([][]*big.Int, 0)
-		nodeMap    = make([]*big.Int, 0)
-		layoutMap  = make([]*big.Int, 0)
-	)
+func (r *TokenRing) CalcOffsetTokensONTS() [][]*big.Int {
+	dcsByCount := make([][]*big.Int, 0)
 
 	for i, v := range r.DcCounts {
 		wCounts := make([]*big.Int, 2)
@@ -163,8 +158,7 @@ func (r *TokenRing) CalcOffsetTokensONTS() (dcList [][]*big.Int) {
 
 	sortBigInts(dcsByCount)
 
-	biggestDcCount := dcsByCount[0][1]
-
+	nodeMap := make([]*big.Int, 0)
 	for _, v := range dcsByCount {
 		dcNum, nodeCount := v[0], v[1]
 		for i := big.NewInt(0); i.Cmp(nodeCount) == -1; i.Add(biIncrementer, i) {
@@ -175,13 +169,15 @@ func (r *TokenRing) CalcOffsetTokensONTS() (dcList [][]*big.Int) {
 	// kind of backed myself in to a corner here
 	// if a DC will ever have N nodes where N is in BigInt range, this will break
 	// hopefully that doesn't happen in my lifetime
+	layoutMap := make([]*big.Int, 0)
+	biggestDcCount := dcsByCount[0][1]
 	for i := 0; i < int(biggestDcCount.Uint64()); i++ {
 		for j := int(i); j < len(nodeMap); j += int(biggestDcCount.Uint64()) {
 			layoutMap = append(layoutMap, nodeMap[j])
 		}
 	}
 
-	dcList = make([][]*big.Int, len(dcsByCount))
+	dcList := make([][]*big.Int, len(dcsByCount))
 
 	for i := range dcsByCount {
 		dcList[i] = make([]*big.Int, 0)
@@ -196,5 +192,6 @@ func (r *TokenRing) CalcOffsetTokensONTS() (dcList [][]*big.Int) {
 
 		dcList[index] = append(dcList[index], val)
 	}
-	return
+
+	return dcList
 }

@@ -121,8 +121,10 @@ func main() {
 	// if we are printing in JSON format print JSON, while passing Pretty flag
 	// if not JSON just print the table format
 	if opts.JSON {
-		formatter.PrintJSON(tokenResults, opts.Pretty)
+		j := formatter.FormatJSON(tokenResults, opts.Pretty)
+		fmt.Println(string(j))
 	} else {
-		formatter.PrintTokens(tokenResults, len(opts.RingRangeStr))
+		j := formatter.FormatTokens(tokenResults, len(opts.RingRangeStr))
+		fmt.Println(string(j))
 	}
 }
