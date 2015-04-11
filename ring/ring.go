@@ -58,7 +58,7 @@ type TokenRing struct {
 	RingRange *big.Int
 }
 
-// NewRing returns a new instance of TokenRing
+// New returns a new instance of TokenRing
 func New(d []*big.Int, r *big.Int) *TokenRing {
 	return &TokenRing{
 		DcCounts:  d,

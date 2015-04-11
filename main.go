@@ -15,11 +15,13 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"math/big"
 	"os"
 
-	"github.com/theckman/cassandra-tgen/formatter"
+	"github.com/theckman/cassandra-tgen/ctgformatter"
 	"github.com/theckman/cassandra-tgen/options"
 	"github.com/theckman/cassandra-tgen/ring"
 )
@@ -120,11 +122,13 @@ func main() {
 
 	// if we are printing in JSON format print JSON, while passing Pretty flag
 	// if not JSON just print the table format
+	var output bytes.Buffer
+
 	if opts.JSON {
-		j := formatter.FormatJSON(tokenResults, opts.Pretty)
-		fmt.Println(string(j))
+		output.Write(ctgformatter.FormatJSON(tokenResults, opts.Pretty))
 	} else {
-		j := formatter.FormatTokens(tokenResults, len(opts.RingRangeStr))
-		fmt.Println(string(j))
+		output.Write(ctgformatter.FormatTokens(tokenResults, len(opts.RingRangeStr)))
 	}
+
+	io.Copy(os.Stdout, &output)
 }
