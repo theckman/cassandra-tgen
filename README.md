@@ -1,5 +1,7 @@
-cassandra-tgen
-==============
+# cassandra-tgen
+[![TravisCI Build Status](https://img.shields.io/travis/theckman/cassandra-tgen/master.svg)](https://travis-ci.org/theckman/cassandra-tgen)
+[![GoDoc](https://img.shields.io/badge/cassandra--tgen-GoDoc-blue.svg)](https://godoc.org/github.com/theckman/cassandra-tgen)
+
 This is an implementation of the Apache Cassandra project's token generator in Go.
 
 This implements the token generation ability, without the ability to generate the HTML graph showing the ring.
@@ -7,14 +9,12 @@ This implements the token generation ability, without the ability to generate th
 In addition, you can now output the data in a standard JSON format, or a pretty-printed JSON format. This will allow
 you to use the tool to generate tokens and easily consume the results.
 
-LICENSE
--------
+## LICENSE
 This software is released under the [Apache 2.0](https://tldrlegal.com/license/apache-license-2.0-(apache-2.0)) license.
 This work is a derivative of work done by the Apache Software Foundation (ASF) released under the Apache 2.0 license.
 This work is in no way related to the works being done by the ASF.
 
-INSTALLATION
-------------
+## INSTALLATION
 You'll need a properly installed Go environment ([http://golang.org/doc/install](http://golang.org/doc/install)) to use
 `cassandra-tgen`
 
@@ -24,13 +24,11 @@ To install `cassandra-tgen`:
 go install github.com/theckman/cassandra-tgen
 ```
 
-TODOs
------
+## TODOs
 It should be functionally complete. I need to write some unit tests. It has been manually tested and the output is the
 same as the Apache Cassandra version.
 
-USAGE
------
+## USAGE
 Assuming you've installed Go and casandra-tgen properly the `cassandra-tgen` should be in your path.
 
 ### Interactive Mode
